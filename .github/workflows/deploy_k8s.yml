@@ -13,22 +13,25 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Setup Kubernetes config
+      run: echo "${{ secrets.KUBECONFIG }}" > $GITHUB_WORKSPACE/kubeconfig
+
+    - name: Check Cluster Availability
+      continue-on-error: true
       run: |
-        echo "${{ secrets.KUBECONFIG }}" > $GITHUB_WORKSPACE/kubeconfig
+        kubectl cluster-info --kubeconfig $GITHUB_WORKSPACE/kubeconfig && echo "cluster_status=available" >> $GITHUB_ENV || echo "cluster_status=unavailable" >> $GITHUB_ENV
 
     - name: Add Helm repository for Nginx Ingress
-      run: |
-        helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      if: env.cluster_status == 'available'
+      run: helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 
     - name: Update Helm repositories
-      run: |
-        helm repo update
+      if: env.cluster_status == 'available'
+      run: helm repo update
 
     - name: Install Nginx Ingress Controller
-      run: |
-        helm upgrade --install nginx-ingress ingress-nginx/ingress-nginx --kubeconfig $GITHUB_WORKSPACE/kubeconfig
+      if: env.cluster_status == 'available'
+      run: helm upgrade --install nginx-ingress ingress-nginx/ingress-nginx --kubeconfig $GITHUB_WORKSPACE/kubeconfig
 
-  
   deploy_to_kubernetes:
     needs: deploy_ingress_controller
     runs-on: ubuntu-latest
@@ -37,14 +40,14 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Setup Kubernetes config
-      run: |
-        echo "${{ secrets.KUBECONFIG }}" > $GITHUB_WORKSPACE/kubeconfig
+      run: echo "${{ secrets.KUBECONFIG }}" > $GITHUB_WORKSPACE/kubeconfig
 
     - name: Setup Helm
+      if: env.cluster_status == 'available'
       uses: azure/setup-helm@v1
       with:
-        version: '3.6.0' # Set your desired Helm version
+        version: '3.6.0'
 
     - name: Deploy with Helm
-      run: |
-        helm upgrade --install gateway-release helm/autoally-gateway --atomic --kubeconfig $GITHUB_WORKSPACE/kubeconfig
+      if: env.cluster_status == 'available'
+      run: helm upgrade --install gateway-release helm/autoally-gateway --atomic --kubeconfig $GITHUB_WORKSPACE/kubeconfig
