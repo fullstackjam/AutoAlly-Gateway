@@ -20,7 +20,7 @@ jobs:
     - name: Check Cluster Availability
       continue-on-error: true
       run: |
-        kubectl cluster-info --kubeconfig $GITHUB_WORKSPACE/kubeconfig && echo "cluster_status=available" >> $GITHUB_ENV || echo "cluster_status=unavailable" >> $GITHUB_ENV
+        kubectl cluster-info --insecure-skip-tls-verify --kubeconfig $GITHUB_WORKSPACE/kubeconfig && echo "cluster_status=available" >> $GITHUB_ENV || echo "cluster_status=unavailable" >> $GITHUB_ENV
 
     - name: Add Helm repository for Nginx Ingress
       if: env.cluster_status == 'available'
