@@ -32,7 +32,7 @@ jobs:
 
     - name: Install Nginx Ingress Controller
       if: env.cluster_status == 'available'
-      run: helm upgrade --install nginx-ingress ingress-nginx/ingress-nginx --kubeconfig $GITHUB_WORKSPACE/kubeconfig
+      run: helm upgrade --install nginx-ingress ingress-nginx/ingress-nginx --set controller.service.type=NodePort --kubeconfig $GITHUB_WORKSPACE/kubeconfig
 
     - name: Deploy with Helm
       if: env.cluster_status == 'available'
